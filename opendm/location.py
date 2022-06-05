@@ -3,6 +3,8 @@ from opendm import log
 from pyproj import Proj, Transformer, CRS
 from osgeo import osr
 
+
+
 def extract_utm_coords(photos, images_path, output_coords_file):
     """
     Create a coordinate file containing the GPS positions of all cameras 
@@ -24,6 +26,7 @@ def extract_utm_coords(photos, images_path, output_coords_file):
             log.ODM_WARNING("GPS position not available for %s" % photo.filename)
             continue
         
+        
         if utm_zone is None:
             utm_zone, hemisphere = get_utm_zone_and_hemisphere_from(photo.longitude, photo.latitude)
 
@@ -32,6 +35,18 @@ def extract_utm_coords(photos, images_path, output_coords_file):
             coord = convert_to_utm(photo.longitude, photo.latitude, alt, utm_zone, hemisphere)
         except:
             raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
+        
+        # add a block to return polar stereo for high latitudes
+        if photo.latitude > 75:
+            try:
+                log.ODM_WARNING("using polar stereo for %s" % photo.filename)
+                alt = photo.altitude if photo.altitude is not None else 0
+                
+                #coord = convert_to_utm(photo.longitude, photo.latitude, alt)
+                p_polarstereo = Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', preserve_units=True)
+                
+                coord = p_polarstereo(photo.longitude, photo.latitude, alt)
+            
         
         coords.append(coord)
 
@@ -106,12 +121,13 @@ def convert_to_utm(lon, lat, alt, utm_zone, hemisphere):
     :return [x,y,z] UTM coordinates
     """
     if hemisphere == 'N':
-        p = Proj(proj='utm',zone=utm_zone,ellps='WGS84', preserve_units=True)
+        p = Proj(proj='utm', zone=utm_zone, ellps='WGS84', preserve_units=True)
     else:
-        p = Proj(proj='utm',zone=utm_zone,ellps='WGS84', preserve_units=True, south=True)
+        p = Proj(proj='utm', zone=utm_zone, ellps='WGS84', preserve_units=True, south=True)
     
     x,y = p(lon, lat)
     return [x, y, alt]
+
 
 def parse_srs_header(header):
     """
