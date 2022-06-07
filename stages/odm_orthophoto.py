@@ -83,13 +83,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                             tokens = line.split(' ')
                             if len(tokens) == 4:
                                 ulx = float(tokens[0]) + \
-                                    float(reconstruction.georef.utm_east_offset)
+                                    float(reconstruction.georef.east_offset)
                                 lry = float(tokens[1]) + \
-                                    float(reconstruction.georef.utm_north_offset)
+                                    float(reconstruction.georef.north_offset)
                                 lrx = float(tokens[2]) + \
-                                    float(reconstruction.georef.utm_east_offset)
+                                    float(reconstruction.georef.east_offset)
                                 uly = float(tokens[3]) + \
-                                    float(reconstruction.georef.utm_north_offset)
+                                    float(reconstruction.georef.north_offset)
                 log.ODM_INFO('Creating GeoTIFF')
 
                 orthophoto_vars = orthophoto.get_orthophoto_vars(args)

@@ -116,8 +116,8 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 stages.append("transformation")
                 params += [
                     '--filters.transformation.matrix="1 0 0 %s 0 1 0 %s 0 0 1 0 0 0 0 1"' % reconstruction.georef.utm_offset(),
-                    '--writers.las.offset_x=%s' % reconstruction.georef.utm_east_offset,
-                    '--writers.las.offset_y=%s' % reconstruction.georef.utm_north_offset,
+                    '--writers.las.offset_x=%s' % reconstruction.georef.east_offset,
+                    '--writers.las.offset_y=%s' % reconstruction.georef.north_offset,
                     '--writers.las.scale_x=0.001',
                     '--writers.las.scale_y=0.001',
                     '--writers.las.scale_z=0.001',

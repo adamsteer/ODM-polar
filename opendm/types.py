@@ -160,7 +160,7 @@ class ODM_Reconstruction(object):
     
     def get_proj_offset(self):
         if self.is_georeferenced():
-            return (self.georef.utm_east_offset, self.georef.utm_north_offset)
+            return (self.georef.east_offset, self.georef.north_offset)
         else:
             return (None, None)
 
