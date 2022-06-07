@@ -37,7 +37,7 @@ def extract_utm_coords(photos, images_path, output_coords_file):
             raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
         
         # add a block to return polar stereo for high latitudes
-        if photo.latitude > 75:
+        if photo.latitude > 60:
             try:
                 log.ODM_WARNING("using polar stereo for %s" % photo.filename)
                 alt = photo.altitude if photo.altitude is not None else 0
@@ -46,6 +46,8 @@ def extract_utm_coords(photos, images_path, output_coords_file):
                 p_polarstereo = Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', preserve_units=True)
                 
                 coord = p_polarstereo(photo.longitude, photo.latitude, alt)
+            except:
+               raise Exception("Failed to convert GPS position to polar stereo for %s" % photo.filename)
             
         
         coords.append(coord)
@@ -66,7 +68,17 @@ def extract_utm_coords(photos, images_path, output_coords_file):
 
     # Open output file
     with open(output_coords_file, "w") as f:
-        f.write("WGS84 UTM %s%s\n" % (utm_zone, hemisphere))
+        #for low latitudes use UTM
+        ### TODO: generate a proj string from UTM parts
+        ### and write that - because readers of coords.txt
+        ### are gonna use proj strings soon!
+        
+        if photos[0].latitude < 60:
+            f.write("WGS84 UTM %s%s\n" % (utm_zone, hemisphere))
+        else:
+            # write in a proj string for polar stereo
+            f.write("+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs\n")
+            
         f.write("%s %s\n" % (dx, dy))
         for coord in coords:
             f.write("%s %s %s\n" % (coord[0] - dx, coord[1] - dy, coord[2]))

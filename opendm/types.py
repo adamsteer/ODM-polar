@@ -172,6 +172,10 @@ class ODM_Reconstruction(object):
 
 class ODM_GeoRef(object):
     @staticmethod
+    
+    ## All this needs unpacking to parse Proj strings
+    ## instead of a UTM zone and hemisphere
+    
     def FromCoordsFile(coords_file):
         # check for coordinate file existence
         if not io.file_exists(coords_file):
