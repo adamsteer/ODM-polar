@@ -26,16 +26,10 @@ def extract_utm_coords(photos, images_path, output_coords_file):
             log.ODM_WARNING("GPS position not available for %s" % photo.filename)
             continue
         
-        
+        log.ODM_WARNING("latitude %s" % photo.latitude)
         if utm_zone is None:
             utm_zone, hemisphere = get_utm_zone_and_hemisphere_from(photo.longitude, photo.latitude)
 
-        try:
-            alt = photo.altitude if photo.altitude is not None else 0
-            coord = convert_to_utm(photo.longitude, photo.latitude, alt, utm_zone, hemisphere)
-        except:
-            raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
-        
         # add a block to return polar stereo for high latitudes
         if photo.latitude > 60:
             try:
@@ -43,12 +37,21 @@ def extract_utm_coords(photos, images_path, output_coords_file):
                 alt = photo.altitude if photo.altitude is not None else 0
                 
                 #coord = convert_to_utm(photo.longitude, photo.latitude, alt)
-                p_polarstereo = Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', preserve_units=True)
+                p_polarstereo = Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
+                                     preserve_units=True)
                 
-                coord = p_polarstereo(photo.longitude, photo.latitude, alt)
+                x,y = p_polarstereo(photo.longitude, photo.latitude)
+                
+                coord = [x, y, alt]
+                log.ODM_WARNING("coords %s" % coord)
             except:
                raise Exception("Failed to convert GPS position to polar stereo for %s" % photo.filename)
-            
+        else:
+            try:
+                alt = photo.altitude if photo.altitude is not None else 0
+                coord = convert_to_utm(photo.longitude, photo.latitude, alt, utm_zone, hemisphere)
+            except:
+                raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
         
         coords.append(coord)
 
@@ -75,12 +78,15 @@ def extract_utm_coords(photos, images_path, output_coords_file):
         
         if photos[0].latitude < 60:
             f.write("WGS84 UTM %s%s\n" % (utm_zone, hemisphere))
+            log.ODM_WARNING("using UTM")
         else:
             # write in a proj string for polar stereo
             f.write("+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs\n")
+            log.ODM_WARNING("using Polar Stereo")
             
         f.write("%s %s\n" % (dx, dy))
         for coord in coords:
+            log.ODM_WARNING("writing: %s %s \n" % (coord[0], coord[1]))
             f.write("%s %s %s\n" % (coord[0] - dx, coord[1] - dy, coord[2]))
     
 def transform2(from_srs, to_srs, x, y):
