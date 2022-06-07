@@ -183,33 +183,35 @@ class ODM_GeoRef(object):
             return
 
         srs = None
-        utm_east_offset = None
-        utm_north_offset = None
+        east_offset = None
+        north_offset = None
 
         with open(coords_file) as f:
             # extract reference system and utm zone from first line.
             # We will assume the following format:
             # 'WGS84 UTM 17N' or 'WGS84 UTM 17N \n'
             line = f.readline().rstrip()
+            
+            # this function already handles bare Proj strings - yay!
             srs = location.parse_srs_header(line)
 
             # second line is a northing/easting offset
             line = f.readline().rstrip()
-            utm_east_offset, utm_north_offset = map(float, line.split(" "))
+            east_offset, north_offset = map(float, line.split(" "))
 
-        return ODM_GeoRef(srs, utm_east_offset, utm_north_offset)
+        return ODM_GeoRef(srs, east_offset, north_offset)
 
-    def __init__(self, srs, utm_east_offset, utm_north_offset):
+    def __init__(self, srs, east_offset, north_offset):
         self.srs = srs
-        self.utm_east_offset = utm_east_offset
-        self.utm_north_offset = utm_north_offset
+        self.east_offset = east_offset
+        self.north_offset = north_offset
         self.transform = []
 
     def proj4(self):
         return self.srs.to_proj4()
     
     def utm_offset(self):
-        return (self.utm_east_offset, self.utm_north_offset)
+        return (self.east_offset, self.north_offset)
     
 class ODM_Tree(object):
     def __init__(self, root_path, gcp_file = None, geo_file = None):

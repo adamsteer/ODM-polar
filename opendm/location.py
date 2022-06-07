@@ -152,6 +152,10 @@ def parse_srs_header(header):
     ref = header.split(' ')
 
     try:
+    
+        ### this if statement can likely be removed
+        ### the mechanics for using bare proj strings is 
+        ### already here in the elif below!
         if ref[0] == 'WGS84' and ref[1] == 'UTM':
             datum = ref[0]
             utm_pole = (ref[2][len(ref[2]) - 1]).upper()
