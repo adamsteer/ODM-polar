@@ -26,8 +26,19 @@ class ODMSplitStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
         photos = reconstruction.photos
+        outputs['large'] = False
 
-        outputs['large'] = len(photos) > args.split
+        should_split = len(photos) > args.split
+
+        if should_split:
+            # check for availability of either image_groups.txt (split-merge) or geotagged photos
+            image_groups_file = os.path.join(args.project_path, "image_groups.txt")
+            if 'split_image_groups_is_set' in args:
+                image_groups_file = os.path.abspath(args.split_image_groups)
+            if io.file_exists(image_groups_file) or reconstruction.has_geotagged_photos():
+                outputs['large'] = True
+            else:
+                log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
 
         if outputs['large']:
             # If we have a cluster address, we'll use a distributed workflow
@@ -52,7 +63,7 @@ class ODMSplitStage(types.ODM_Stage):
                 ]
 
                 octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
-                octx.photos_to_metadata(photos, self.rerun())
+                octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, self.rerun())
 
                 self.update_progress(5)
 
@@ -103,16 +114,15 @@ class ODMSplitStage(types.ODM_Stage):
                 if local_workflow:
                     for sp in submodel_paths:
                         log.ODM_INFO("Reconstructing %s" % sp)
-                        OSFMContext(sp).reconstruct(self.rerun())
+                        local_sp_octx = OSFMContext(sp)
+                        local_sp_octx.create_tracks(self.rerun())
+                        local_sp_octx.reconstruct(args.rolling_shutter, self.rerun())
                 else:
-                    lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
+                    lre = LocalRemoteExecutor(args.sm_cluster, args.rolling_shutter, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()
 
                 self.update_progress(50)
-
-                mds = metadataset.MetaDataSet(tree.opensfm)
-                submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
 
                 # Align
                 octx.align_reconstructions(self.rerun())
