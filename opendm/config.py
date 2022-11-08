@@ -242,6 +242,12 @@ def config(argv=None, parser=None):
                 nargs=0,
                 default=False,
                 help='Automatically compute image masks using AI to remove the sky. Experimental. Default: %(default)s')
+    
+    parser.add_argument('--bg-removal',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help='Automatically compute image masks using AI to remove the background. Experimental. Default: %(default)s')
 
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
@@ -725,11 +731,12 @@ def config(argv=None, parser=None):
                               'The file needs to use the following format: \n'
                               'image_name group_name\n'
                               'Default: %(default)s'))
-    # parser.add_argument('--split-multitracks',
-    #                    action=StoreTrue,
-    #                    nargs=0,
-    #                    default=False,
-    #                    help='Split multi-track reconstructions.')
+
+    parser.add_argument('--sm-no-align',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Skip alignment of submodels in split-merge. Useful if GPS is good enough on very large datasets. Default: %(default)s')
 
     parser.add_argument('--sm-cluster',
                         metavar='<string>',
